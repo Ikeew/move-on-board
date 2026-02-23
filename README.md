@@ -1,4 +1,7 @@
-a
+Alunos: Henrique Xavier Klappoth e Rodrigo Xavier Klappoth
+Professor: Luiz Carlos Camargo
+Curso: Engenharia de Software 5a fase
+Universidade: Católica de Santa Catarina
 
 
 # 📌 1. Domínio do Problema
