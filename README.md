@@ -3,6 +3,7 @@ Professor: Luiz Carlos Camargo
 Curso: Engenharia de Software 5a fase
 Universidade: Católica de Santa Catarina
 
+Protótipo do front: https://www.figma.com/make/ytEycGcZPl0j2kLYCvYLLh/Move-on-Board
 
 # 📌 1. Domínio do Problema
 
