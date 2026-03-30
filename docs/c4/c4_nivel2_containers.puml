@@ -1,0 +1,21 @@
+@startuml C4_Container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Diagrama Contêineres - Move On Board
+
+Person(usuario, "Usuário", "Estudante ou profissional que organiza tarefas")
+
+System_Ext(email, "Serviço de E-mail", "Envio de e-mails de recuperação de senha")
+
+System_Boundary(moveonboard, "Move On Board") {
+    Container(frontend, "Single-Page Application", "React / JavaScript", "Interface Kanban com drag and drop. Responsiva para desktop e mobile")
+    Container(api, "API Application", "Python / FastAPI", "Lógica de negócio via REST. Autenticação JWT e documentação Swagger")
+    ContainerDb(db, "Database", "PostgreSQL", "Armazena usuários, quadros, listas, cards e etiquetas")
+}
+
+Rel(usuario, frontend, "Acessa via navegador", "HTTPS")
+Rel(frontend, api, "Chamadas REST para criar, editar e mover recursos", "JSON/HTTPS")
+Rel(api, db, "Lê e escreve dados", "SQL")
+Rel(api, email, "Envia e-mail de recuperação de senha", "SMTP")
+
+@enduml

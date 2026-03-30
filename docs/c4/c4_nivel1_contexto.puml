@@ -1,0 +1,15 @@
+@startuml C4_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Diagrama Contexto - Move On Board
+
+Person(usuario, "Usuário", "Estudante ou profissional que organiza tarefas")
+
+System(moveonboard, "Move On Board", "Aplicação web Kanban para criação de quadros, listas e cards de tarefas")
+
+System_Ext(email, "Serviço de E-mail", "Envio de e-mails de recuperação de senha")
+
+Rel(usuario, moveonboard, "Cria e gerencia quadros, listas e cards", "App/Website")
+Rel(moveonboard, email, "Envia e-mail de recuperação de senha", "SMTP")
+
+@enduml

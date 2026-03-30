@@ -1,0 +1,40 @@
+@startuml C4_Component
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Diagrama Componentes - API Application (FastAPI)
+
+Container(frontend, "Single-Page Application", "React / JavaScript", "Interface web do usuário")
+ContainerDb(db, "Database", "PostgreSQL", "Armazena todos os dados")
+System_Ext(email, "Serviço de E-mail", "SMTP externo")
+
+Container_Boundary(api, "API Application - FastAPI") {
+    Component(auth, "Auth Controller", "FastAPI Router", "Endpoints de cadastro e login. Gera tokens JWT")
+    Component(board, "Board Controller", "FastAPI Router", "CRUD de quadros (RF02)")
+    Component(lista, "List Controller", "FastAPI Router", "CRUD de listas dentro dos quadros (RF03)")
+    Component(card, "Card Controller", "FastAPI Router", "CRUD e movimentação de cards entre listas (RF04, RF05)")
+    Component(filtro, "Filter Controller", "FastAPI Router", "Busca e filtragem de cards por título, etiqueta ou prioridade (RF06)")
+    Component(security, "Security Component", "JWT / bcrypt", "Valida tokens e realiza hash de senhas")
+    Component(repo, "Repositories", "SQLAlchemy ORM", "Acesso ao banco: User, Board, List, Card")
+}
+
+Rel(frontend, auth, "POST /auth/register, /auth/login", "JSON/HTTPS")
+Rel(frontend, board, "GET/POST/PUT/DELETE /boards", "JSON/HTTPS")
+Rel(frontend, lista, "GET/POST/PUT/DELETE /lists", "JSON/HTTPS")
+Rel(frontend, card, "GET/POST/PUT/DELETE /cards, PATCH /cards/move", "JSON/HTTPS")
+Rel(frontend, filtro, "GET /cards/search", "JSON/HTTPS")
+
+Rel(auth, security, "Gera e valida JWT, hash de senha", "")
+Rel(board, security, "Valida JWT", "")
+Rel(lista, security, "Valida JWT", "")
+Rel(card, security, "Valida JWT", "")
+
+Rel(auth, repo, "Busca e cria usuário", "")
+Rel(board, repo, "CRUD de quadros", "")
+Rel(lista, repo, "CRUD de listas", "")
+Rel(card, repo, "CRUD e reordenação de cards", "")
+Rel(filtro, repo, "Consulta cards com filtros", "")
+
+Rel(auth, email, "Envia e-mail de recuperação de senha", "SMTP")
+Rel(repo, db, "Lê e escreve dados", "SQL")
+
+@enduml
