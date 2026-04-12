@@ -28,3 +28,8 @@ Thumbs.db
 
 # Alembic (generated)
 alembic/versions/__pycache__/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
