@@ -1,17 +1,17 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
-import path from "path";
+import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
   server: {
     port: 5173,
+    allowedHosts: ["unreposed-biserrate-kirsten.ngrok-free.dev"],
     proxy: {
       "/api": {
         target: "http://localhost:8000",
@@ -21,3 +21,4 @@ export default defineConfig({
     },
   },
 });
+
