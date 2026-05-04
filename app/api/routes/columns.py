@@ -10,6 +10,16 @@ from app.services.column_service import ColumnService
 router = APIRouter(tags=["Columns"])
 
 
+@router.get("/boards/{board_id}/columns", response_model=list[ColumnResponse])
+def list_columns(
+    board_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List all columns of a board ordered by position."""
+    return ColumnService(db).list_columns(board_id, current_user)
+
+
 @router.post(
     "/boards/{board_id}/columns",
     response_model=ColumnResponse,
