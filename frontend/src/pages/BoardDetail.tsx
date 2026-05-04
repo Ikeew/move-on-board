@@ -84,8 +84,9 @@ function TaskCard({
       onDragStart={() => onDragStart(task, task.column_id)}
       onDragOver={(e) => { e.preventDefault(); onDragOver(e); }}
       onDrop={(e) => { e.preventDefault(); onDrop(task); }}
-      className="bg-white border border-[#e2e8f0] rounded-xl p-3 cursor-grab active:cursor-grabbing
-                 hover:shadow-md transition-all group select-none"
+      onClick={() => onEdit(task)}
+      className="bg-white border border-[#e2e8f0] rounded-xl p-3 cursor-pointer
+                 hover:shadow-md hover:border-[#c7d2fe] transition-all group select-none"
     >
       {/* Labels */}
       {task.labels.length > 0 && (
@@ -117,14 +118,7 @@ function TaskCard({
           {menuOpen && (
             <div className="absolute right-0 top-5 bg-white border border-[#e2e8f0] rounded-xl shadow-lg z-20 min-w-[140px] py-1">
               <button
-                onClick={() => { onEdit(task); setMenuOpen(false); }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-left text-sm text-[#475569]
-                           font-['Plus_Jakarta_Sans',sans-serif] hover:bg-[#f1f5f9]"
-              >
-                <Pencil size={14} /> Editar
-              </button>
-              <button
-                onClick={() => { onDelete(task); setMenuOpen(false); }}
+                onClick={(e) => { e.stopPropagation(); onDelete(task); setMenuOpen(false); }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-left text-sm text-[#ef4444]
                            font-['Plus_Jakarta_Sans',sans-serif] hover:bg-[#fee2e2]"
               >
@@ -533,7 +527,7 @@ function ColumnModal({ column, onClose, onSave }: ColumnModalProps) {
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit() {
-    if (!title.trim()) { toast.error("Informe o nome da coluna"); return; }
+    if (!title.trim()) { toast.error("Informe o nome da lista"); return; }
     setSaving(true);
     try {
       await onSave(title.trim());
@@ -550,7 +544,7 @@ function ColumnModal({ column, onClose, onSave }: ColumnModalProps) {
       <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-lg text-[#1e293b]">
-            {column ? "Renomear Coluna" : "Nova Coluna"}
+            {column ? "Renomear Lista" : "Nova Lista"}
           </h2>
           <button onClick={onClose} className="text-[#94a3b8] hover:text-[#64748b]">
             <X size={20} />
@@ -837,7 +831,7 @@ export function BoardDetail() {
         newOrder.map((c) => ({ id: c.id, position: c.position }))
       );
     } catch {
-      toast.error("Erro ao mover coluna");
+      toast.error("Erro ao mover lista");
       setColumns(sorted);
     }
   }
@@ -845,22 +839,22 @@ export function BoardDetail() {
   async function handleCreateColumn(title: string) {
     const col = await columnsApi.create(boardId!, { title });
     setColumns((prev) => [...prev, col].sort((a, b) => a.position - b.position));
-    toast.success("Coluna criada!");
+    toast.success("Lista criada!");
   }
 
   async function handleEditColumn(title: string) {
     const col = columnModal.column!;
     const updated = await columnsApi.update(col.id, { title });
     setColumns((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-    toast.success("Coluna atualizada!");
+    toast.success("Lista atualizada!");
   }
 
   async function handleDeleteColumn(column: Column) {
-    if (!confirm(`Excluir a coluna "${column.title}"? Todas as tarefas serão removidas.`)) return;
+    if (!confirm(`Excluir a lista "${column.title}"? Todas as tarefas serão removidas.`)) return;
     await columnsApi.remove(column.id);
     setColumns((prev) => prev.filter((c) => c.id !== column.id));
     setTasks((prev) => prev.filter((t) => t.column_id !== column.id));
-    toast.success("Coluna excluída");
+    toast.success("Lista excluída");
   }
 
   // ── Task actions ───────────────────────────────────────────────────────────
@@ -973,7 +967,7 @@ export function BoardDetail() {
                        transition-colors shadow-lg shadow-[#4f46e5]/25"
           >
             <Plus size={16} />
-            <span className="hidden sm:inline">Nova Coluna</span>
+            <span className="hidden sm:inline">Nova Lista</span>
           </button>
         </div>
       </div>
@@ -1007,14 +1001,14 @@ export function BoardDetail() {
             <div className="flex flex-col items-center justify-center w-72 h-48 border-2 border-dashed
                             border-[#cbd5e1] rounded-2xl text-center">
               <p className="font-['Plus_Jakarta_Sans',sans-serif] text-[#94a3b8] text-sm mb-3">
-                Nenhuma coluna ainda
+                Nenhuma lista ainda
               </p>
               <button
                 onClick={() => setColumnModal({ open: true })}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4f46e5] text-white
                            font-['Plus_Jakarta_Sans',sans-serif] text-sm font-semibold hover:bg-[#4338ca]"
               >
-                <Plus size={16} /> Criar coluna
+                <Plus size={16} /> Criar lista
               </button>
             </div>
           )}
