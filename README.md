@@ -181,10 +181,36 @@ Ideal para modelagem de:
 
 # 📌 4. Arquitetura Geral
 
+A arquitetura do sistema foi documentada seguindo o modelo **C4** (Context → Container → Component), com diagramas gerados via PlantUML.
+
 * API REST
 * Separação Front-end e Back-end
 * Banco relacional com integridade referencial
 * Autenticação stateless com JWT
+
+## Nível 1 — Contexto
+
+Mostra o sistema como um todo e como o usuário interage com ele.
+
+![C4 Context](docs/c4/C4_Context.png)
+
+> Fonte: [`docs/c4/c4_nivel1_contexto.puml`](docs/c4/c4_nivel1_contexto.puml)
+
+## Nível 2 — Containers
+
+Detalha os containers do sistema: Frontend (React SPA), API (FastAPI) e Banco de Dados (PostgreSQL).
+
+![C4 Container](docs/c4/C4_Container.png)
+
+> Fonte: [`docs/c4/c4_nivel2_containers.puml`](docs/c4/c4_nivel2_containers.puml)
+
+## Nível 3 — Componentes
+
+Expande o container da API, mostrando os controllers, serviços, repositórios e o módulo de segurança JWT/bcrypt.
+
+![C4 Component](docs/c4/C4_Component.png)
+
+> Fonte: [`docs/c4/c4_nivel3_componentes.puml`](docs/c4/c4_nivel3_componentes.puml)
 
 ---
 
