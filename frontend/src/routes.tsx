@@ -3,6 +3,7 @@ import { Layout } from "./components/Layout";
 import { PrivateRoute } from "./components/PrivateRoute";
 import { Home } from "./pages/Home";
 import { Projetos } from "./pages/Projetos";
+import { BoardDetail } from "./pages/BoardDetail";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { NotFound } from "./pages/NotFound";
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
         children: [
           { path: "/", Component: Home },
           { path: "/projetos", Component: Projetos },
+          { path: "/projetos/:boardId", Component: BoardDetail },
           { path: "*", Component: NotFound },
         ],
       },

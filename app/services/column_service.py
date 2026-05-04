@@ -14,6 +14,11 @@ class ColumnService:
         self.board_repo = BoardRepository(db)
         self.col_repo = ColumnRepository(db)
 
+    def list_columns(self, board_id: str, owner: User) -> list[ColumnResponse]:
+        self._get_owned_board(board_id, owner)
+        columns = self.col_repo.list_by_board(board_id)
+        return [ColumnResponse.model_validate(c) for c in columns]
+
     def create(self, board_id: str, data: ColumnCreate, owner: User) -> ColumnResponse:
         board = self._get_owned_board(board_id, owner)
         position = data.position
