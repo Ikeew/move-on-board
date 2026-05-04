@@ -57,6 +57,38 @@ export interface TokenResponse {
   token_type: string;
 }
 
+export interface Column {
+  id: string;
+  title: string;
+  position: number;
+  board_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type Priority = "low" | "medium" | "high";
+
+export interface Label {
+  id: string;
+  name: string;
+  color: string;
+  board_id: string;
+  created_at: string;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  priority: Priority;
+  due_date: string | null;
+  position: number;
+  column_id: string;
+  labels: Label[];
+  created_at: string;
+  updated_at: string;
+}
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export const authApi = {
@@ -83,6 +115,9 @@ export const boardsApi = {
   list() {
     return request<Board[]>("/boards");
   },
+  get(id: string) {
+    return request<Board>(`/boards/${id}`);
+  },
   create(data: { title: string; description?: string }) {
     return request<Board>("/boards", {
       method: "POST",
@@ -97,5 +132,104 @@ export const boardsApi = {
   },
   remove(id: string) {
     return request<void>(`/boards/${id}`, { method: "DELETE" });
+  },
+};
+
+// ─── Columns ──────────────────────────────────────────────────────────────────
+
+export const columnsApi = {
+  list(boardId: string) {
+    return request<Column[]>(`/boards/${boardId}/columns`);
+  },
+  create(boardId: string, data: { title: string }) {
+    return request<Column>(`/boards/${boardId}/columns`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+  update(columnId: string, data: { title: string }) {
+    return request<Column>(`/columns/${columnId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+  remove(columnId: string) {
+    return request<void>(`/columns/${columnId}`, { method: "DELETE" });
+  },
+  reorder(boardId: string, columns: { id: string; position: number }[]) {
+    return request<Column[]>(`/boards/${boardId}/columns/reorder`, {
+      method: "PATCH",
+      body: JSON.stringify({ columns }),
+    });
+  },
+};
+
+// ─── Tasks ────────────────────────────────────────────────────────────────────
+
+export const tasksApi = {
+  listByBoard(boardId: string) {
+    return request<Task[]>(`/boards/${boardId}/tasks`);
+  },
+  create(
+    columnId: string,
+    data: {
+      title: string;
+      description?: string;
+      priority?: Priority;
+      due_date?: string | null;
+      label_ids?: string[];
+    }
+  ) {
+    return request<Task>(`/columns/${columnId}/tasks`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+  update(
+    taskId: string,
+    data: {
+      title?: string;
+      description?: string | null;
+      priority?: Priority;
+      due_date?: string | null;
+      label_ids?: string[];
+    }
+  ) {
+    return request<Task>(`/tasks/${taskId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+  move(taskId: string, data: { column_id: string; position: number }) {
+    return request<Task>(`/tasks/${taskId}/move`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+  remove(taskId: string) {
+    return request<void>(`/tasks/${taskId}`, { method: "DELETE" });
+  },
+};
+
+// ─── Labels ───────────────────────────────────────────────────────────────────
+
+export const labelsApi = {
+  list(boardId: string) {
+    return request<Label[]>(`/boards/${boardId}/labels`);
+  },
+  create(boardId: string, data: { name: string; color?: string }) {
+    return request<Label>(`/boards/${boardId}/labels`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+  update(labelId: string, data: { name?: string; color?: string }) {
+    return request<Label>(`/labels/${labelId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+  remove(labelId: string) {
+    return request<void>(`/labels/${labelId}`, { method: "DELETE" });
   },
 };
