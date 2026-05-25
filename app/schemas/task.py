@@ -37,13 +37,6 @@ class TaskMoveRequest(BaseModel):
     position: int
 
 
-class TaskWithContextResponse(TaskResponse):
-    """TaskResponse enriquecido com informações do quadro e da lista."""
-    board_id: str
-    board_title: str
-    column_title: str
-
-
 class TaskResponse(BaseModel):
     model_config = {"from_attributes": True}
 
@@ -58,3 +51,9 @@ class TaskResponse(BaseModel):
     assignee: UserBrief | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class TaskWithContextResponse(TaskResponse):
+    board_id: str
+    board_title: str
+    column_title: str
