@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:15
+    container_name: move_on_board_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-moveonboard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-moveonboard}
+      POSTGRES_DB: ${POSTGRES_DB:-move_on_board}
+    volumes:
+      - move_on_board_pgdata:/var/lib/postgresql/data
+    # Postgres stays on the internal network only — no port published to the host.
+    # If you need to connect with a client from outside, uncomment the line below
+    # (choose a free host port; the other postgres containers in your VPS don't
+    # publish 5432 either, so even "5432:5432" would work, but I'd avoid it).
+    # ports:
+    #   - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moveonboard} -d ${POSTGRES_DB:-move_on_board}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - move_on_board_net
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: move-on-board-backend
+    container_name: move_on_board_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-moveonboard}:${POSTGRES_PASSWORD:-moveonboard}@db:5432/${POSTGRES_DB:-move_on_board}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      APP_ENV: ${APP_ENV:-production}
+      APP_DEBUG: ${APP_DEBUG:-false}
+    ports:
+      # Host 8001 -> container 8000 (your hostel_bot already owns 8000)
+      - "8001:8000"
+    networks:
+      - move_on_board_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: move-on-board-frontend
+    container_name: move_on_board_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      # Host 8082 -> container 80 (3000 and 8080 are taken on your VPS)
+      - "8082:80"
+    networks:
+      - move_on_board_net
+
+volumes:
+  move_on_board_pgdata:
+
+networks:
+  move_on_board_net:
+    driver: bridge
