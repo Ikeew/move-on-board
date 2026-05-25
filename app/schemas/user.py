@@ -8,5 +8,17 @@ class UserResponse(BaseModel):
     id: str
     name: str
     email: EmailStr
+    bio: str | None = None
     is_active: bool
     created_at: datetime
+
+
+class UpdateProfileRequest(BaseModel):
+    name: str | None = None
+    email: EmailStr | None = None
+    bio: str | None = None
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str

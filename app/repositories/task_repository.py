@@ -7,6 +7,15 @@ from app.models.board import Board
 from app.models.task_label import TaskLabel
 from app.repositories.base import BaseRepository
 
+# Named tuple for tasks with context
+from typing import NamedTuple
+
+class TaskWithContext(NamedTuple):
+    task: Task
+    board_id: str
+    board_title: str
+    column_title: str
+
 
 class TaskRepository(BaseRepository[Task]):
     def __init__(self, db: Session):
@@ -20,11 +29,19 @@ class TaskRepository(BaseRepository[Task]):
         )
         return self.db.scalar(stmt)
 
+    def get_with_labels_and_assignee(self, task_id: str) -> Task | None:
+        stmt = (
+            select(Task)
+            .where(Task.id == task_id)
+            .options(selectinload(Task.labels), selectinload(Task.assignee))
+        )
+        return self.db.scalar(stmt)
+
     def list_by_column(self, column_id: str) -> list[Task]:
         stmt = (
             select(Task)
             .where(Task.column_id == column_id)
-            .options(selectinload(Task.labels))
+            .options(selectinload(Task.labels), selectinload(Task.assignee))
             .order_by(Task.position)
         )
         return list(self.db.scalars(stmt).all())
@@ -34,7 +51,7 @@ class TaskRepository(BaseRepository[Task]):
             select(Task)
             .join(Column, Task.column_id == Column.id)
             .where(Column.board_id == board_id)
-            .options(selectinload(Task.labels))
+            .options(selectinload(Task.labels), selectinload(Task.assignee))
             .order_by(Column.position, Task.position)
         )
         return list(self.db.scalars(stmt).all())
@@ -77,6 +94,26 @@ class TaskRepository(BaseRepository[Task]):
             )
 
         return list(self.db.scalars(stmt).all())
+
+    def list_assigned_to_user(self, user_id: str) -> list["TaskWithContext"]:
+        stmt = (
+            select(Task, Column.title.label("column_title"), Board.id.label("board_id"), Board.title.label("board_title"))
+            .join(Column, Task.column_id == Column.id)
+            .join(Board, Column.board_id == Board.id)
+            .where(Task.assignee_id == user_id)
+            .options(selectinload(Task.labels), selectinload(Task.assignee))
+            .order_by(Task.due_date.asc().nulls_last(), Task.created_at.desc())
+        )
+        rows = self.db.execute(stmt).all()
+        return [
+            TaskWithContext(
+                task=row[0],
+                board_id=row.board_id,
+                board_title=row.board_title,
+                column_title=row.column_title,
+            )
+            for row in rows
+        ]
 
     def add_label(self, task: Task, label_id: str) -> None:
         existing = self.db.get(TaskLabel, {"task_id": task.id, "label_id": label_id})

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.api.routes import auth, boards, columns, tasks, labels
+from app.api.routes import auth, boards, columns, tasks, labels, board_members
 from app.core.config import settings
 
 app = FastAPI(
@@ -45,6 +45,7 @@ app.include_router(boards.router)
 app.include_router(columns.router)
 app.include_router(tasks.router)
 app.include_router(labels.router)
+app.include_router(board_members.router)
 
 
 @app.get("/health", tags=["Health"])

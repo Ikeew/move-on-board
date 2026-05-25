@@ -28,6 +28,9 @@ class Task(Base, TimestampMixin):
     column_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("columns.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    assignee_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Relationships
     column: Mapped["Column"] = relationship("Column", back_populates="tasks")  # noqa: F821
@@ -36,6 +39,7 @@ class Task(Base, TimestampMixin):
         secondary="task_labels",
         back_populates="tasks",
     )
+    assignee: Mapped["User | None"] = relationship("User", foreign_keys=[assignee_id])  # noqa: F821
 
     def __repr__(self) -> str:
         return f"<Task id={self.id} title={self.title} position={self.position}>"

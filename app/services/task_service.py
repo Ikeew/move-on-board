@@ -8,7 +8,7 @@ from app.repositories.board_repository import BoardRepository
 from app.repositories.column_repository import ColumnRepository
 from app.repositories.task_repository import TaskRepository
 from app.repositories.label_repository import LabelRepository
-from app.schemas.task import TaskCreate, TaskUpdate, TaskMoveRequest, TaskResponse
+from app.schemas.task import TaskCreate, TaskUpdate, TaskMoveRequest, TaskResponse, TaskWithContextResponse
 
 
 class TaskService:
@@ -31,13 +31,14 @@ class TaskService:
             due_date=data.due_date,
             position=position,
             column_id=column.id,
+            assignee_id=data.assignee_id,
         )
         self.task_repo.save(task)
 
         if data.label_ids:
             self._sync_labels(task, data.label_ids, column.board_id)
 
-        task = self.task_repo.get_with_labels(task.id)
+        task = self.task_repo.get_with_labels_and_assignee(task.id)
         return TaskResponse.model_validate(task)
 
     def get_task(self, task_id: str, owner: User) -> TaskResponse:
@@ -63,9 +64,12 @@ class TaskService:
             task.due_date = data.due_date
         if data.label_ids is not None:
             self._sync_labels(task, data.label_ids, column.board_id)
+        # assignee_id pode ser None explicitamente para remover
+        if "assignee_id" in data.model_fields_set:
+            task.assignee_id = data.assignee_id
 
         self.task_repo.save(task)
-        task = self.task_repo.get_with_labels(task.id)
+        task = self.task_repo.get_with_labels_and_assignee(task.id)
         return TaskResponse.model_validate(task)
 
     def delete(self, task_id: str, owner: User) -> None:
@@ -90,8 +94,21 @@ class TaskService:
             self._remove_from_column(task, source_column_id, old_position)
             self._insert_into_column(task, target_column.id, new_position)
 
-        task = self.task_repo.get_with_labels(task.id)
+        task = self.task_repo.get_with_labels_and_assignee(task.id)
         return TaskResponse.model_validate(task)
+
+    def list_assigned_to_me(self, user: User) -> list[TaskWithContextResponse]:
+        rows = self.task_repo.list_assigned_to_user(user.id)
+        result = []
+        for row in rows:
+            base = TaskResponse.model_validate(row.task)
+            result.append(TaskWithContextResponse(
+                **base.model_dump(),
+                board_id=row.board_id,
+                board_title=row.board_title,
+                column_title=row.column_title,
+            ))
+        return result
 
     def search(
         self,
@@ -166,7 +183,7 @@ class TaskService:
         return column
 
     def _get_owned_task(self, task_id: str, owner: User) -> Task:
-        task = self.task_repo.get_with_labels(task_id)
+        task = self.task_repo.get_with_labels_and_assignee(task_id)
         if not task:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found.")
         column = self.col_repo.get_by_id(task.column_id)

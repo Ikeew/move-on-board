@@ -5,10 +5,19 @@ from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.models.task import Priority
 from app.models.user import User
-from app.schemas.task import TaskCreate, TaskUpdate, TaskMoveRequest, TaskResponse
+from app.schemas.task import TaskCreate, TaskUpdate, TaskMoveRequest, TaskResponse, TaskWithContextResponse
 from app.services.task_service import TaskService
 
 router = APIRouter(tags=["Tasks"])
+
+
+@router.get("/tasks/mine", response_model=list[TaskWithContextResponse])
+def list_my_tasks(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List all tasks assigned to the authenticated user, across all boards."""
+    return TaskService(db).list_assigned_to_me(current_user)
 
 
 @router.post(

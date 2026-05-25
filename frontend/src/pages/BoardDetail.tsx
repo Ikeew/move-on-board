@@ -13,6 +13,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Users,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -20,13 +22,15 @@ import {
   columnsApi,
   tasksApi,
   labelsApi,
+  membersApi,
   type Board,
   type Column,
   type Task,
   type Label,
+  type Member,
   type Priority,
 } from "../lib/api";
-import { formatDate } from "../lib/utils";
+import { formatDate, getInitials } from "../lib/utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -137,15 +141,26 @@ function TaskCard({
       )}
 
       {/* Footer */}
-      <div className="flex items-center gap-2 mt-2 flex-wrap">
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${PRIORITY_COLOR[task.priority]}`}>
-          {PRIORITY_LABEL[task.priority]}
-        </span>
-        {task.due_date && (
-          <span className="flex items-center gap-1 text-[10px] text-[#94a3b8]">
-            <Calendar size={10} />
-            {formatDate(task.due_date)}
+      <div className="flex items-center justify-between gap-2 mt-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${PRIORITY_COLOR[task.priority]}`}>
+            {PRIORITY_LABEL[task.priority]}
           </span>
+          {task.due_date && (
+            <span className="flex items-center gap-1 text-[10px] text-[#94a3b8]">
+              <Calendar size={10} />
+              {formatDate(task.due_date)}
+            </span>
+          )}
+        </div>
+        {task.assignee && (
+          <div
+            title={task.assignee.name}
+            className="size-6 rounded-full bg-[#4f46e5] text-white text-[9px] font-bold
+                       flex items-center justify-center shrink-0"
+          >
+            {getInitials(task.assignee.name)}
+          </div>
         )}
       </div>
     </div>
@@ -316,6 +331,7 @@ interface TaskModalProps {
   task?: Task | null;
   columnId: string;
   labels: Label[];
+  members: Member[];
   onClose: () => void;
   onSave: (data: {
     title: string;
@@ -323,10 +339,11 @@ interface TaskModalProps {
     priority: Priority;
     due_date: string;
     label_ids: string[];
+    assignee_id: string | null;
   }) => Promise<void>;
 }
 
-function TaskModal({ task, columnId: _columnId, labels, onClose, onSave }: TaskModalProps) {
+function TaskModal({ task, columnId: _columnId, labels, members, onClose, onSave }: TaskModalProps) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
   const [priority, setPriority] = useState<Priority>(task?.priority ?? "medium");
@@ -336,6 +353,7 @@ function TaskModal({ task, columnId: _columnId, labels, onClose, onSave }: TaskM
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>(
     task?.labels.map((l) => l.id) ?? []
   );
+  const [assigneeId, setAssigneeId] = useState<string>(task?.assignee?.id ?? "");
   const [saving, setSaving] = useState(false);
   const [showLabels, setShowLabels] = useState(false);
 
@@ -355,6 +373,7 @@ function TaskModal({ task, columnId: _columnId, labels, onClose, onSave }: TaskM
         priority,
         due_date: dueDate,
         label_ids: selectedLabelIds,
+        assignee_id: assigneeId || null,
       });
       onClose();
     } catch (err) {
@@ -445,6 +464,30 @@ function TaskModal({ task, columnId: _columnId, labels, onClose, onSave }: TaskM
               />
             </div>
           </div>
+
+          {/* Responsável */}
+          {members.length > 0 && (
+            <div>
+              <label className="font-['Plus_Jakarta_Sans',sans-serif] text-sm font-medium text-[#475569] block mb-1">
+                Responsável
+              </label>
+              <div className="relative">
+                <select
+                  value={assigneeId}
+                  onChange={(e) => setAssigneeId(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-[#cbd5e1] text-[#1e293b]
+                             font-['Plus_Jakarta_Sans',sans-serif] focus:outline-none focus:ring-2
+                             focus:ring-[#4f46e5] appearance-none bg-white"
+                >
+                  <option value="">Sem responsável</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name} ({m.email})</option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94a3b8] pointer-events-none" />
+              </div>
+            </div>
+          )}
 
           {/* Labels */}
           {labels.length > 0 && (
@@ -584,6 +627,120 @@ function ColumnModal({ column, onClose, onSave }: ColumnModalProps) {
   );
 }
 
+// ─── MemberManager ────────────────────────────────────────────────────────────
+
+interface MemberManagerProps {
+  boardId: string;
+  members: Member[];
+  onMembersChange: (members: Member[]) => void;
+  onClose: () => void;
+}
+
+function MemberManager({ boardId, members, onMembersChange, onClose }: MemberManagerProps) {
+  const [email, setEmail] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  async function handleAdd() {
+    if (!email.trim()) { toast.error("Informe o e-mail"); return; }
+    setAdding(true);
+    try {
+      const member = await membersApi.add(boardId, email.trim());
+      onMembersChange([...members, member]);
+      setEmail("");
+      toast.success("Membro adicionado!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao adicionar membro");
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  async function handleRemove(member: Member) {
+    try {
+      await membersApi.remove(boardId, member.id);
+      onMembersChange(members.filter((m) => m.id !== member.id));
+      toast.success("Membro removido");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao remover");
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-['Plus_Jakarta_Sans',sans-serif] font-bold text-lg text-[#1e293b]">
+            Membros do Quadro
+          </h2>
+          <button onClick={onClose} className="text-[#94a3b8] hover:text-[#64748b]">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Adicionar por email */}
+        <div className="mb-4 p-3 bg-[#f8fafc] rounded-xl">
+          <p className="font-['Plus_Jakarta_Sans',sans-serif] text-xs font-semibold text-[#64748b] mb-2 uppercase tracking-wide">
+            Convidar membro
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              placeholder="email@exemplo.com"
+              className="flex-1 px-3 py-2 rounded-lg border border-[#cbd5e1] text-sm text-[#1e293b]
+                         font-['Plus_Jakarta_Sans',sans-serif] focus:outline-none focus:ring-2
+                         focus:ring-[#4f46e5]"
+            />
+            <button
+              onClick={handleAdd}
+              disabled={adding}
+              className="px-3 py-2 rounded-lg bg-[#4f46e5] text-white hover:bg-[#4338ca]
+                         disabled:opacity-60 transition-colors"
+            >
+              <UserPlus size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Lista de membros */}
+        <div className="space-y-2 max-h-56 overflow-y-auto">
+          {members.length === 0 && (
+            <p className="text-center text-sm text-[#94a3b8] font-['Plus_Jakarta_Sans',sans-serif] py-4">
+              Nenhum membro ainda
+            </p>
+          )}
+          {members.map((m) => (
+            <div key={m.id} className="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-[#f8fafc]">
+              <div className="flex items-center gap-3">
+                <div className="size-8 rounded-full bg-[#4f46e5] text-white text-xs font-bold
+                               flex items-center justify-center shrink-0">
+                  {getInitials(m.name)}
+                </div>
+                <div>
+                  <p className="font-['Plus_Jakarta_Sans',sans-serif] text-sm font-semibold text-[#1e293b]">
+                    {m.name}
+                  </p>
+                  <p className="font-['Plus_Jakarta_Sans',sans-serif] text-xs text-[#94a3b8]">
+                    {m.email}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handleRemove(m)}
+                className="text-[#cbd5e1] hover:text-[#ef4444] transition-colors shrink-0"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── LabelManager ─────────────────────────────────────────────────────────────
 
 interface LabelManagerProps {
@@ -715,6 +872,7 @@ export function BoardDetail() {
   const [columns, setColumns] = useState<Column[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Drag state
@@ -724,6 +882,7 @@ export function BoardDetail() {
   const [columnModal, setColumnModal] = useState<{ open: boolean; column?: Column }>({ open: false });
   const [taskModal, setTaskModal] = useState<{ open: boolean; columnId?: string; task?: Task }>({ open: false });
   const [labelManagerOpen, setLabelManagerOpen] = useState(false);
+  const [memberManagerOpen, setMemberManagerOpen] = useState(false);
 
   useEffect(() => {
     if (!boardId) return;
@@ -732,12 +891,14 @@ export function BoardDetail() {
       columnsApi.list(boardId),
       tasksApi.listByBoard(boardId),
       labelsApi.list(boardId),
+      membersApi.list(boardId),
     ])
-      .then(([b, cols, tsks, lbls]) => {
+      .then(([b, cols, tsks, lbls, mbrs]) => {
         setBoard(b);
         setColumns(cols.sort((a, b) => a.position - b.position));
         setTasks(tsks);
         setLabels(lbls);
+        setMembers(mbrs);
       })
       .catch(() => {
         toast.error("Erro ao carregar o quadro");
@@ -865,6 +1026,7 @@ export function BoardDetail() {
     priority: Priority;
     due_date: string;
     label_ids: string[];
+    assignee_id: string | null;
   }) {
     const colId = taskModal.columnId!;
     const task = await tasksApi.create(colId, {
@@ -873,6 +1035,7 @@ export function BoardDetail() {
       priority: data.priority,
       due_date: data.due_date || undefined,
       label_ids: data.label_ids,
+      assignee_id: data.assignee_id,
     });
     setTasks((prev) => [...prev, task]);
     toast.success("Tarefa criada!");
@@ -884,6 +1047,7 @@ export function BoardDetail() {
     priority: Priority;
     due_date: string;
     label_ids: string[];
+    assignee_id: string | null;
   }) {
     const task = taskModal.task!;
     const updated = await tasksApi.update(task.id, {
@@ -892,6 +1056,7 @@ export function BoardDetail() {
       priority: data.priority,
       due_date: data.due_date || undefined,
       label_ids: data.label_ids,
+      assignee_id: data.assignee_id,
     });
     setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     toast.success("Tarefa atualizada!");
@@ -952,6 +1117,19 @@ export function BoardDetail() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setMemberManagerOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#e2e8f0] text-[#475569]
+                       font-['Plus_Jakarta_Sans',sans-serif] text-sm font-semibold hover:bg-[#f1f5f9] transition-colors"
+          >
+            <Users size={16} />
+            <span className="hidden sm:inline">Membros</span>
+            {members.length > 0 && (
+              <span className="size-5 rounded-full bg-[#4f46e5] text-white text-[10px] font-bold flex items-center justify-center">
+                {members.length}
+              </span>
+            )}
+          </button>
           <button
             onClick={() => setLabelManagerOpen(true)}
             className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#e2e8f0] text-[#475569]
@@ -1030,6 +1208,7 @@ export function BoardDetail() {
           task={taskModal.task}
           columnId={taskModal.columnId}
           labels={labels}
+          members={members}
           onClose={() => setTaskModal({ open: false })}
           onSave={taskModal.task ? handleEditTask : handleCreateTask}
         />
@@ -1042,6 +1221,16 @@ export function BoardDetail() {
           labels={labels}
           onLabelsChange={setLabels}
           onClose={() => setLabelManagerOpen(false)}
+        />
+      )}
+
+      {/* Member manager */}
+      {memberManagerOpen && (
+        <MemberManager
+          boardId={boardId!}
+          members={members}
+          onMembersChange={setMembers}
+          onClose={() => setMemberManagerOpen(false)}
         />
       )}
     </div>

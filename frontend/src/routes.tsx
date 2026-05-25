@@ -4,6 +4,8 @@ import { PrivateRoute } from "./components/PrivateRoute";
 import { Home } from "./pages/Home";
 import { Projetos } from "./pages/Projetos";
 import { BoardDetail } from "./pages/BoardDetail";
+import { Settings } from "./pages/Settings";
+import { MinhasTarefas } from "./pages/MinhasTarefas";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { NotFound } from "./pages/NotFound";
@@ -23,6 +25,8 @@ export const router = createBrowserRouter([
           { path: "/", Component: Home },
           { path: "/projetos", Component: Projetos },
           { path: "/projetos/:boardId", Component: BoardDetail },
+          { path: "/tarefas", Component: MinhasTarefas },
+          { path: "/configuracoes", Component: Settings },
           { path: "*", Component: NotFound },
         ],
       },

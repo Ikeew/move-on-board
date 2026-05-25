@@ -100,6 +100,18 @@ Marcadores visuais para classificação (ex: "Urgente", "Bug", "Estudo").
 * Buscar cards por título
 * Filtrar por etiqueta ou prioridade
 
+**RF07 — Membros do Quadro**
+
+* Convidar membros ao quadro por e-mail (somente o dono)
+* Listar membros do quadro
+* Remover membros do quadro
+
+**RF08 — Atribuição de Tarefas**
+
+* Atribuir um responsável a uma tarefa
+* Responsável deve ser membro do quadro
+* Exibir avatar do responsável no card
+
 ---
 
 ## ⚙️ Requisitos Não Funcionais (RNF)
@@ -224,6 +236,10 @@ Expande o container da API, mostrando os controllers, serviços, repositórios e
 
 ✔ CRUD de Cards
 
-✔ Movimentação de Cards
+✔ Movimentação de Cards (drag & drop + reordenar listas)
 
 ✔ Filtro básico
+
+✔ Membros do Quadro (convidar, listar, remover)
+
+✔ Atribuição de Tarefas (responsável por card)

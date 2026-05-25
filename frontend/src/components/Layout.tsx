@@ -6,6 +6,8 @@ import {
   Home,
   FolderKanban,
   LogOut,
+  Settings,
+  CheckSquare,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { getInitials } from "../lib/utils";
@@ -13,6 +15,8 @@ import { getInitials } from "../lib/utils";
 const menuItems = [
   { icon: Home, label: "Início", path: "/" },
   { icon: FolderKanban, label: "Quadros", path: "/projetos" },
+  { icon: CheckSquare, label: "Tarefas", path: "/tarefas" },
+  { icon: Settings, label: "Configurações", path: "/configuracoes" },
 ];
 
 export function Layout() {
@@ -27,7 +31,7 @@ export function Layout() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#f8fafc]">
+    <div className="flex h-screen w-full overflow-hidden bg-[#f8fafc] dark:bg-slate-900">
       {/* Overlay mobile */}
       {sidebarOpen && (
         <div
@@ -40,14 +44,14 @@ export function Layout() {
       <aside
         className={`
           fixed lg:static inset-y-0 left-0 z-50
-          w-[280px] bg-white border-r border-[#e2e8f0]
+          w-[280px] bg-white dark:bg-slate-800 border-r border-[#e2e8f0] dark:border-slate-700
           transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between p-6 border-b border-[#e2e8f0]">
+          <div className="flex items-center justify-between p-6 border-b border-[#e2e8f0] dark:border-slate-700">
             <div className="flex gap-2 items-center">
               <div className="bg-[#4f46e5] rounded-xl size-8 flex items-center justify-center">
                 <svg
@@ -61,7 +65,7 @@ export function Layout() {
                   <rect x="14" y="17" width="7" height="4" rx="2" fill="white" fillOpacity="0.6" />
                 </svg>
               </div>
-              <span className="font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-[#1e293b] text-lg">
+              <span className="font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-[#1e293b] dark:text-slate-100 text-lg">
                 Move On Board
               </span>
             </div>
@@ -93,7 +97,7 @@ export function Layout() {
                       ${
                         isActive
                           ? "bg-[#4f46e5] text-white shadow-lg shadow-[#4f46e5]/25"
-                          : "text-[#475569] hover:bg-[#f1f5f9] hover:text-[#1e293b]"
+                          : "text-[#475569] dark:text-slate-400 hover:bg-[#f1f5f9] dark:hover:bg-slate-700 hover:text-[#1e293b] dark:hover:text-slate-100"
                       }
                     `}
                   >
@@ -106,16 +110,16 @@ export function Layout() {
           </nav>
 
           {/* User */}
-          <div className="p-4 border-t border-[#e2e8f0]">
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#f1f5f9] cursor-pointer transition-colors group">
+          <div className="p-4 border-t border-[#e2e8f0] dark:border-slate-700">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-[#f1f5f9] dark:hover:bg-slate-700 cursor-pointer transition-colors group">
               <div className="size-9 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#7c3aed] flex items-center justify-center text-white font-semibold text-sm shrink-0">
                 {user ? getInitials(user.name) : "?"}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-[#1e293b] text-sm truncate">
+                <p className="font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-[#1e293b] dark:text-slate-100 text-sm truncate">
                   {user?.name ?? "Carregando..."}
                 </p>
-                <p className="font-['Plus_Jakarta_Sans',sans-serif] text-[#64748b] text-xs truncate">
+                <p className="font-['Plus_Jakarta_Sans',sans-serif] text-[#64748b] dark:text-slate-400 text-xs truncate">
                   {user?.email ?? ""}
                 </p>
               </div>
@@ -134,14 +138,14 @@ export function Layout() {
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header mobile */}
-        <header className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-[#e2e8f0]">
+        <header className="lg:hidden flex items-center justify-between p-4 bg-white dark:bg-slate-800 border-b border-[#e2e8f0] dark:border-slate-700">
           <button
             onClick={() => setSidebarOpen(true)}
             className="text-[#64748b] hover:text-[#1e293b]"
           >
             <Menu size={24} />
           </button>
-          <span className="font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-[#1e293b]">
+          <span className="font-['Plus_Jakarta_Sans',sans-serif] font-semibold text-[#1e293b] dark:text-slate-100">
             Move On Board
           </span>
           <div className="w-6" />

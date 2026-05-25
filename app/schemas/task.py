@@ -5,6 +5,14 @@ from app.models.task import Priority
 from app.schemas.label import LabelResponse
 
 
+class UserBrief(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: str
+    name: str
+    email: str
+
+
 class TaskCreate(BaseModel):
     title: str
     description: str | None = None
@@ -12,6 +20,7 @@ class TaskCreate(BaseModel):
     due_date: datetime | None = None
     position: int | None = None
     label_ids: list[str] = []
+    assignee_id: str | None = None
 
 
 class TaskUpdate(BaseModel):
@@ -20,11 +29,19 @@ class TaskUpdate(BaseModel):
     priority: Priority | None = None
     due_date: datetime | None = None
     label_ids: list[str] | None = None
+    assignee_id: str | None = None
 
 
 class TaskMoveRequest(BaseModel):
     column_id: str
     position: int
+
+
+class TaskWithContextResponse(TaskResponse):
+    """TaskResponse enriquecido com informações do quadro e da lista."""
+    board_id: str
+    board_title: str
+    column_title: str
 
 
 class TaskResponse(BaseModel):
@@ -38,5 +55,6 @@ class TaskResponse(BaseModel):
     position: int
     column_id: str
     labels: list[LabelResponse] = []
+    assignee: UserBrief | None = None
     created_at: datetime
     updated_at: datetime

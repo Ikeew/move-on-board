@@ -217,11 +217,11 @@ export function Home() {
             return (
               <div
                 key={board.id}
-                className="group bg-white rounded-xl border border-[#e2e8f0] overflow-hidden
+                className="group bg-white rounded-xl border border-[#e2e8f0]
                          hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
                 {/* Cabeçalho colorido — clicável para abrir */}
-                <Link to={`/projetos/${board.id}`} className="block">
+                <Link to={`/projetos/${board.id}`} className="block rounded-t-xl overflow-hidden">
                   <div className="h-24 relative" style={{ backgroundColor: color }}>
                     <div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/20" />
                   </div>

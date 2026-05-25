@@ -39,6 +39,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  bio: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -68,6 +69,12 @@ export interface Column {
 
 export type Priority = "low" | "medium" | "high";
 
+export interface Member {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface Label {
   id: string;
   name: string;
@@ -85,8 +92,15 @@ export interface Task {
   position: number;
   column_id: string;
   labels: Label[];
+  assignee: Member | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface TaskWithContext extends Task {
+  board_id: string;
+  board_title: string;
+  column_title: string;
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -106,6 +120,18 @@ export const authApi = {
   },
   me() {
     return request<User>("/auth/me");
+  },
+  updateProfile(data: { name?: string; email?: string; bio?: string | null }) {
+    return request<User>("/auth/me", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+  changePassword(data: { current_password: string; new_password: string }) {
+    return request<void>("/auth/me/password", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
   },
 };
 
@@ -167,6 +193,9 @@ export const columnsApi = {
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 
 export const tasksApi = {
+  mine() {
+    return request<TaskWithContext[]>("/tasks/mine");
+  },
   listByBoard(boardId: string) {
     return request<Task[]>(`/boards/${boardId}/tasks`);
   },
@@ -178,6 +207,7 @@ export const tasksApi = {
       priority?: Priority;
       due_date?: string | null;
       label_ids?: string[];
+      assignee_id?: string | null;
     }
   ) {
     return request<Task>(`/columns/${columnId}/tasks`, {
@@ -193,6 +223,7 @@ export const tasksApi = {
       priority?: Priority;
       due_date?: string | null;
       label_ids?: string[];
+      assignee_id?: string | null;
     }
   ) {
     return request<Task>(`/tasks/${taskId}`, {
@@ -208,6 +239,23 @@ export const tasksApi = {
   },
   remove(taskId: string) {
     return request<void>(`/tasks/${taskId}`, { method: "DELETE" });
+  },
+};
+
+// ─── Members ──────────────────────────────────────────────────────────────────
+
+export const membersApi = {
+  list(boardId: string) {
+    return request<Member[]>(`/boards/${boardId}/members`);
+  },
+  add(boardId: string, email: string) {
+    return request<Member>(`/boards/${boardId}/members`, {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  },
+  remove(boardId: string, userId: string) {
+    return request<void>(`/boards/${boardId}/members/${userId}`, { method: "DELETE" });
   },
 };
 

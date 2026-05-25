@@ -25,6 +25,11 @@ class Board(Base, TimestampMixin):
     labels: Mapped[list["Label"]] = relationship(  # noqa: F821
         "Label", back_populates="board", cascade="all, delete-orphan"
     )
+    members: Mapped[list["User"]] = relationship(  # noqa: F821
+        "User",
+        secondary="board_members",
+        back_populates="member_boards",
+    )
 
     def __repr__(self) -> str:
         return f"<Board id={self.id} title={self.title}>"
