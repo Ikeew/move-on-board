@@ -22,7 +22,7 @@ class TaskService:
         self.notif_repo = NotificationRepository(db)
 
     def create(self, column_id: str, data: TaskCreate, owner: User) -> TaskResponse:
-        column = self._get_owned_column(column_id, owner)
+        column = self._get_accessible_column(column_id, owner)
         position = data.position
         if position is None:
             position = self.task_repo.count_by_column(column_id)
@@ -48,16 +48,16 @@ class TaskService:
         return TaskResponse.model_validate(task)
 
     def get_task(self, task_id: str, owner: User) -> TaskResponse:
-        task = self._get_owned_task(task_id, owner)
+        task = self._get_accessible_task(task_id, owner)
         return TaskResponse.model_validate(task)
 
     def list_by_board(self, board_id: str, owner: User) -> list[TaskResponse]:
-        self._get_owned_board(board_id, owner)
+        self._get_accessible_board(board_id, owner)
         tasks = self.task_repo.list_by_board(board_id)
         return [TaskResponse.model_validate(t) for t in tasks]
 
     def update(self, task_id: str, data: TaskUpdate, owner: User) -> TaskResponse:
-        task = self._get_owned_task(task_id, owner)
+        task = self._get_accessible_task(task_id, owner)
         column = self.col_repo.get_by_id(task.column_id)
 
         if data.title is not None:
@@ -82,14 +82,14 @@ class TaskService:
         return TaskResponse.model_validate(task)
 
     def delete(self, task_id: str, owner: User) -> None:
-        task = self._get_owned_task(task_id, owner)
+        task = self._get_accessible_task(task_id, owner)
         self.task_repo.delete(task)
 
     def move(self, task_id: str, data: TaskMoveRequest, owner: User) -> TaskResponse:
-        task = self._get_owned_task(task_id, owner)
+        task = self._get_accessible_task(task_id, owner)
 
-        # Validate target column belongs to the same owner
-        target_column = self._get_owned_column(data.column_id, owner)
+        # Validate target column is accessible
+        target_column = self._get_accessible_column(data.column_id, owner)
 
         source_column_id = task.column_id
         old_position = task.position
@@ -127,7 +127,7 @@ class TaskService:
         priority: Priority | None = None,
         label_id: str | None = None,
     ) -> list[TaskResponse]:
-        self._get_owned_board(board_id, owner)
+        self._get_accessible_board(board_id, owner)
         tasks = self.task_repo.search_by_board(board_id, title=title, priority=priority, label_id=label_id)
         return [TaskResponse.model_validate(t) for t in tasks]
 
@@ -186,11 +186,36 @@ class TaskService:
         )
         self.notif_repo.create(notif)
 
+    def _get_accessible_board(self, board_id: str, user: User):
+        board = self.board_repo.get_by_id(board_id)
+        if not board or not self.board_repo.user_can_access(board, user.id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Board not found.")
+        return board
+
+    def _get_accessible_task(self, task_id: str, user: User) -> Task:
+        task = self.task_repo.get_with_labels_and_assignee(task_id)
+        if not task:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found.")
+        column = self.col_repo.get_by_id(task.column_id)
+        board = self.board_repo.get_by_id(column.board_id)
+        if not board or not self.board_repo.user_can_access(board, user.id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found.")
+        return task
+
     def _get_owned_board(self, board_id: str, owner: User):
         board = self.board_repo.get_by_id(board_id)
         if not board or board.owner_id != owner.id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Board not found.")
         return board
+
+    def _get_accessible_column(self, column_id: str, user: User) -> Column:
+        column = self.col_repo.get_by_id(column_id)
+        if not column:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Column not found.")
+        board = self.board_repo.get_by_id(column.board_id)
+        if not board or not self.board_repo.user_can_access(board, user.id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Column not found.")
+        return column
 
     def _get_owned_column(self, column_id: str, owner: User) -> Column:
         column = self.col_repo.get_by_id(column_id)

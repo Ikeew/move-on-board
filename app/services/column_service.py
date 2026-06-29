@@ -15,7 +15,7 @@ class ColumnService:
         self.col_repo = ColumnRepository(db)
 
     def list_columns(self, board_id: str, owner: User) -> list[ColumnResponse]:
-        self._get_owned_board(board_id, owner)
+        self._get_accessible_board(board_id, owner)
         columns = self.col_repo.list_by_board(board_id)
         return [ColumnResponse.model_validate(c) for c in columns]
 
@@ -62,6 +62,12 @@ class ColumnService:
 
         updated = self.col_repo.list_by_board(board_id)
         return [ColumnResponse.model_validate(c) for c in updated]
+
+    def _get_accessible_board(self, board_id: str, user: User) -> Board:
+        board = self.board_repo.get_by_id(board_id)
+        if not board or not self.board_repo.user_can_access(board, user.id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Board not found.")
+        return board
 
     def _get_owned_board(self, board_id: str, owner: User) -> Board:
         board = self.board_repo.get_by_id(board_id)

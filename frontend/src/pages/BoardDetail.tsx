@@ -175,6 +175,7 @@ interface KanbanColumnProps {
   tasks: Task[];
   canMoveLeft: boolean;
   canMoveRight: boolean;
+  isOwner: boolean;
   onAddTask: (columnId: string) => void;
   onEditColumn: (column: Column) => void;
   onDeleteColumn: (column: Column) => void;
@@ -193,6 +194,7 @@ function KanbanColumn({
   tasks,
   canMoveLeft,
   canMoveRight,
+  isOwner,
   onAddTask,
   onEditColumn,
   onDeleteColumn,
@@ -244,6 +246,7 @@ function KanbanColumn({
           >
             <Plus size={16} />
           </button>
+          {isOwner && (
           <div className="relative" ref={menuOpen ? menuRef : undefined}>
             <button
               onClick={() => setMenuOpen((v) => !v)}
@@ -291,6 +294,7 @@ function KanbanColumn({
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
 
@@ -877,6 +881,8 @@ export function BoardDetail() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const isOwner = !!user && !!board && board.owner_id === user.id;
+
   // Drag state
   const dragTaskRef = useRef<{ task: Task; fromColumnId: string } | null>(null);
 
@@ -1119,36 +1125,42 @@ export function BoardDetail() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setMemberManagerOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#e2e8f0] text-[#475569]
-                       font-['Plus_Jakarta_Sans',sans-serif] text-sm font-semibold hover:bg-[#f1f5f9] transition-colors"
-          >
-            <Users size={16} />
-            <span className="hidden sm:inline">Membros</span>
-            {members.length > 0 && (
-              <span className="size-5 rounded-full bg-[#4f46e5] text-white text-[10px] font-bold flex items-center justify-center">
-                {members.length}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setLabelManagerOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#e2e8f0] text-[#475569]
-                       font-['Plus_Jakarta_Sans',sans-serif] text-sm font-semibold hover:bg-[#f1f5f9] transition-colors"
-          >
-            <Tag size={16} />
-            <span className="hidden sm:inline">Etiquetas</span>
-          </button>
-          <button
-            onClick={() => setColumnModal({ open: true })}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4f46e5] text-white
-                       font-['Plus_Jakarta_Sans',sans-serif] text-sm font-semibold hover:bg-[#4338ca]
-                       transition-colors shadow-lg shadow-[#4f46e5]/25"
-          >
-            <Plus size={16} />
-            <span className="hidden sm:inline">Nova Lista</span>
-          </button>
+          {isOwner && (
+            <button
+              onClick={() => setMemberManagerOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#e2e8f0] text-[#475569]
+                         font-['Plus_Jakarta_Sans',sans-serif] text-sm font-semibold hover:bg-[#f1f5f9] transition-colors"
+            >
+              <Users size={16} />
+              <span className="hidden sm:inline">Membros</span>
+              {members.length > 0 && (
+                <span className="size-5 rounded-full bg-[#4f46e5] text-white text-[10px] font-bold flex items-center justify-center">
+                  {members.length}
+                </span>
+              )}
+            </button>
+          )}
+          {isOwner && (
+            <button
+              onClick={() => setLabelManagerOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#e2e8f0] text-[#475569]
+                         font-['Plus_Jakarta_Sans',sans-serif] text-sm font-semibold hover:bg-[#f1f5f9] transition-colors"
+            >
+              <Tag size={16} />
+              <span className="hidden sm:inline">Etiquetas</span>
+            </button>
+          )}
+          {isOwner && (
+            <button
+              onClick={() => setColumnModal({ open: true })}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4f46e5] text-white
+                         font-['Plus_Jakarta_Sans',sans-serif] text-sm font-semibold hover:bg-[#4338ca]
+                         transition-colors shadow-lg shadow-[#4f46e5]/25"
+            >
+              <Plus size={16} />
+              <span className="hidden sm:inline">Nova Lista</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1162,6 +1174,7 @@ export function BoardDetail() {
               tasks={tasks.filter((t) => t.column_id === col.id)}
               canMoveLeft={idx > 0}
               canMoveRight={idx < sortedColumns.length - 1}
+              isOwner={isOwner}
               onAddTask={(colId) => setTaskModal({ open: true, columnId: colId })}
               onEditColumn={(c) => setColumnModal({ open: true, column: c })}
               onDeleteColumn={handleDeleteColumn}

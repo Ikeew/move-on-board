@@ -25,7 +25,9 @@ class LabelService:
         return LabelResponse.model_validate(label)
 
     def list_labels(self, board_id: str, owner: User) -> list[LabelResponse]:
-        self._get_owned_board(board_id, owner)
+        board = self.board_repo.get_by_id(board_id)
+        if not board or not self.board_repo.user_can_access(board, owner.id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Board not found.")
         labels = self.label_repo.list_by_board(board_id)
         return [LabelResponse.model_validate(l) for l in labels]
 

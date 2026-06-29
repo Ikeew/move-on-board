@@ -15,7 +15,13 @@ class BoardMemberService:
         self.user_repo = UserRepository(db)
 
     def list_members(self, board_id: str, requester: User) -> list[MemberResponse]:
-        self._require_owner(board_id, requester)
+        board = self.board_repo.get_by_id(board_id)
+        if not board:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quadro não encontrado.")
+        is_owner = board.owner_id == requester.id
+        is_member = self.member_repo.is_member(board_id, requester.id)
+        if not is_owner and not is_member:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quadro não encontrado.")
         users = self.member_repo.list_members(board_id)
         return [MemberResponse.model_validate(u) for u in users]
 

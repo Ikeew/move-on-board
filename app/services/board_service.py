@@ -21,11 +21,11 @@ class BoardService:
         return BoardResponse.model_validate(board)
 
     def list_boards(self, owner: User) -> list[BoardResponse]:
-        boards = self.repo.list_by_owner(owner.id)
+        boards = self.repo.list_accessible(owner.id)
         return [BoardResponse.model_validate(b) for b in boards]
 
     def get_board(self, board_id: str, owner: User) -> BoardResponse:
-        board = self._get_owned(board_id, owner)
+        board = self._get_accessible(board_id, owner)
         return BoardResponse.model_validate(board)
 
     def update(self, board_id: str, data: BoardUpdate, owner: User) -> BoardResponse:
@@ -40,6 +40,12 @@ class BoardService:
     def delete(self, board_id: str, owner: User) -> None:
         board = self._get_owned(board_id, owner)
         self.repo.delete(board)
+
+    def _get_accessible(self, board_id: str, user: User) -> Board:
+        board = self.repo.get_by_id(board_id)
+        if not board or not self.repo.user_can_access(board, user.id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Board not found.")
+        return board
 
     def _get_owned(self, board_id: str, owner: User) -> Board:
         board = self.repo.get_by_id(board_id)
