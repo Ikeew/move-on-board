@@ -2,12 +2,14 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.column import Column
+from app.models.notification import Notification
 from app.models.task import Task, Priority
 from app.models.user import User
 from app.repositories.board_repository import BoardRepository
 from app.repositories.column_repository import ColumnRepository
 from app.repositories.task_repository import TaskRepository
 from app.repositories.label_repository import LabelRepository
+from app.repositories.notification_repository import NotificationRepository
 from app.schemas.task import TaskCreate, TaskUpdate, TaskMoveRequest, TaskResponse, TaskWithContextResponse
 
 
@@ -17,6 +19,7 @@ class TaskService:
         self.col_repo = ColumnRepository(db)
         self.task_repo = TaskRepository(db)
         self.label_repo = LabelRepository(db)
+        self.notif_repo = NotificationRepository(db)
 
     def create(self, column_id: str, data: TaskCreate, owner: User) -> TaskResponse:
         column = self._get_owned_column(column_id, owner)
@@ -37,6 +40,9 @@ class TaskService:
 
         if data.label_ids:
             self._sync_labels(task, data.label_ids, column.board_id)
+
+        if data.assignee_id and data.assignee_id != owner.id:
+            self._notify_assigned(data.assignee_id, task.id, task.title, owner.name)
 
         task = self.task_repo.get_with_labels_and_assignee(task.id)
         return TaskResponse.model_validate(task)
@@ -66,7 +72,10 @@ class TaskService:
             self._sync_labels(task, data.label_ids, column.board_id)
         # assignee_id pode ser None explicitamente para remover
         if "assignee_id" in data.model_fields_set:
+            prev_assignee_id = task.assignee_id
             task.assignee_id = data.assignee_id
+            if data.assignee_id and data.assignee_id != prev_assignee_id and data.assignee_id != owner.id:
+                self._notify_assigned(data.assignee_id, task.id, task.title, owner.name)
 
         self.task_repo.save(task)
         task = self.task_repo.get_with_labels_and_assignee(task.id)
@@ -166,6 +175,16 @@ class TaskService:
         self.task_repo.remove_all_labels(task)
         for label in labels:
             self.task_repo.add_label(task, label.id)
+
+    def _notify_assigned(self, assignee_id: str, task_id: str, task_title: str, assigner_name: str) -> None:
+        notif = Notification(
+            user_id=assignee_id,
+            type="assigned",
+            title="Nova tarefa atribuída a você",
+            body=f'{assigner_name} atribuiu a tarefa "{task_title}" a você.',
+            task_id=task_id,
+        )
+        self.notif_repo.create(notif)
 
     def _get_owned_board(self, board_id: str, owner: User):
         board = self.board_repo.get_by_id(board_id)

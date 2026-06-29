@@ -31,6 +31,7 @@ import {
   type Priority,
 } from "../lib/api";
 import { formatDate, getInitials } from "../lib/utils";
+import { useAuth } from "../contexts/AuthContext";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -867,6 +868,7 @@ function LabelManager({ boardId, labels, onLabelsChange, onClose }: LabelManager
 export function BoardDetail() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [board, setBoard] = useState<Board | null>(null);
   const [columns, setColumns] = useState<Column[]>([]);
@@ -1208,7 +1210,7 @@ export function BoardDetail() {
           task={taskModal.task}
           columnId={taskModal.columnId}
           labels={labels}
-          members={members}
+          members={user ? [{ id: user.id, name: user.name + " (você)", email: user.email }, ...members] : members}
           onClose={() => setTaskModal({ open: false })}
           onSave={taskModal.task ? handleEditTask : handleCreateTask}
         />

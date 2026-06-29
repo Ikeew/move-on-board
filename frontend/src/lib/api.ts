@@ -281,3 +281,25 @@ export const labelsApi = {
     return request<void>(`/labels/${labelId}`, { method: "DELETE" });
   },
 };
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  body: string;
+  read: boolean;
+  task_id: string | null;
+  created_at: string;
+}
+
+export const notificationsApi = {
+  list() {
+    return request<Notification[]>("/notifications");
+  },
+  markAllRead() {
+    return request<void>("/notifications/read-all", { method: "POST" });
+  },
+};

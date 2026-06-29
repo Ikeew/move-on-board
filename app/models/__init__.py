@@ -6,6 +6,7 @@ from app.models.task import Task, Priority
 from app.models.label import Label
 from app.models.task_label import TaskLabel
 from app.models.board_member import BoardMember
+from app.models.notification import Notification
 
 __all__ = [
     "Base",
@@ -17,4 +18,5 @@ __all__ = [
     "Label",
     "TaskLabel",
     "BoardMember",
+    "Notification",
 ]
